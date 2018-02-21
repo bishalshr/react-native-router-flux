@@ -27,7 +27,10 @@ export function reducer(state = navigationStore.state, action) {
     return newState || state;
   }
   if (type === ActionConst.JUMP) {
-    const newState = navigationStore.router.getStateForAction(NavigationActions.navigate({ routeName, params: action.params }), state);
+    const newState = navigationStore.router.getStateForAction(NavigationActions.navigate({
+      routeName,
+      params: action.params
+    }), state);
     let activeState = getActiveState(state);
     // skip action if route name is the same (avoid pushing action)
     if (activeState.routeName === 'DrawerOpen') {
@@ -50,7 +53,8 @@ export function reducer(state = navigationStore.state, action) {
     let nextScene = '';
     let newState = state;
     let currentState = state;
-    while (newState && nextScene !== routeName) {
+    const currentScene = getActiveState(state).routeName;
+    while (nextScene !== currentScene && newState && nextScene !== routeName) {
       newState = navigationStore.router.getStateForAction(NavigationActions.back(), currentState);
       if (newState) {
         nextScene = getActiveState(newState).routeName;
@@ -60,6 +64,18 @@ export function reducer(state = navigationStore.state, action) {
       }
     }
     return nextScene === routeName ? newState : state;
+  } else if (type === ActionConst.POP_AND_PUSH) {
+    let newState = state;
+    const times = action.params.popTimes || 1;
+    for (let i = 0; i < times; i++) {
+      newState = navigationStore.router.getStateForAction(NavigationActions.back(), newState);
+    }
+    newState = navigationStore.router.getStateForAction(createAction(NavigationActions.NAVIGATE)({
+      routeName,
+      params: action.params,
+    }), newState);
+
+    return newState;
   } else if (type === ActionConst.REPLACE) {
     const newState = navigationStore.router.getStateForAction(NavigationActions.navigate({
       routeName,
